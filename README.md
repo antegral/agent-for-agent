@@ -1,7 +1,7 @@
 # MMA MCP Server
 
-[![CI](https://github.com/YOUR_USERNAME/agent-for-agent/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/agent-for-agent/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/YOUR_USERNAME/agent-for-agent/workflows/CodeQL/badge.svg)](https://github.com/YOUR_USERNAME/agent-for-agent/actions/workflows/codeql.yml)
+[![CI](https://github.com/antegral/agent-for-agent/workflows/CI/badge.svg)](https://github.com/antegral/agent-for-agent/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/antegral/agent-for-agent/workflows/CodeQL/badge.svg)](https://github.com/antegral/agent-for-agent/actions/workflows/codeql.yml)
 
 병무청 병역일터(Military Manpower Administration) API를 위한 Model Context Protocol (MCP) 서버입니다.
 
