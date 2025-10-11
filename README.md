@@ -1,5 +1,8 @@
 # MMA MCP Server
 
+[![CI](https://github.com/YOUR_USERNAME/agent-for-agent/workflows/CI/badge.svg)](https://github.com/YOUR_USERNAME/agent-for-agent/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/YOUR_USERNAME/agent-for-agent/workflows/CodeQL/badge.svg)](https://github.com/YOUR_USERNAME/agent-for-agent/actions/workflows/codeql.yml)
+
 병무청 병역일터(Military Manpower Administration) API를 위한 Model Context Protocol (MCP) 서버입니다.
 
 ## 기능
@@ -112,6 +115,27 @@
 
 ### 수산업 (Fisheries)
 - 근해, 원양
+
+## CI/CD
+
+이 프로젝트는 GitHub Actions를 사용하여 자동화된 CI/CD 파이프라인을 제공합니다.
+
+### 자동화 워크플로우
+
+- **CI (Continuous Integration)**: `main`, `develop` 브랜치에 push하거나 PR 생성 시 자동으로 린트, 테스트, 빌드를 실행합니다.
+- **Release**: `v*.*.*` 형식의 태그를 push하면 자동으로 GitHub Release를 생성하고 빌드 결과물을 첨부합니다.
+- **CodeQL**: 보안 취약점 자동 분석 (매주 월요일 + PR/Push 시)
+- **Dependabot**: 의존성 자동 업데이트 제안 (매주)
+
+### 릴리즈 생성 방법
+
+```bash
+# 버전 태그 생성 및 푸시
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+자세한 내용은 [.github/workflows/README.md](.github/workflows/README.md)를 참조하세요.
 
 ## 설치
 
