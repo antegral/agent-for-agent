@@ -5,6 +5,10 @@
 
 병무청 병역일터(Military Manpower Administration) API를 위한 Model Context Protocol (MCP) 서버입니다.
 
+<a href="https://glama.ai/mcp/servers/@antegral/agent-for-agent">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@antegral/agent-for-agent/badge" alt="MMA Server MCP server" />
+</a>
+
 ## 기능
 
 이 MCP 서버는 병무청 병역일터에서 병역특례 지정업체 정보를 조회할 수 있는 도구를 제공합니다.
