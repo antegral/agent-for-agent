@@ -137,9 +137,11 @@ MCP 요청은 한 번에 하나만 처리하며 JSON-RPC 배치를 거부합니�
 
 Node.js 24 기반 컨테이너는 UID/GID `10001:10001`로 실행합니다. 애플리케이션 자격 증명, 브라우저, 데이터베이스 또는 영구 볼륨은 필요하지 않습니다. 루트 파일 시스템은 읽기 전용으로 둘 수 있으며 쓰기 가능한 임시 경로는 `/tmp`입니다. 병무청 공개 Excel 다운로드에 대한 HTTPS 통신은 필요합니다.
 
-게이트웨이 통합 계약은 `https://antegral.net/mcp`의 `ams.search_designated_entities` 및 `mcp-ams` 역할입니다. 내부 서비스는 게이트웨이에서만 접근하도록 배포 계층에서 격리해야 합니다. HTTP 구현과 이미지 빌드만으로 공개 OAuth/MCP 동작이 검증된 것은 아니며, 배포 후 최종 단일 시나리오 확인 전까지 런타임 검증은 대기 상태입니다.
+AMS는 `https://antegral.net/mcp`의 네 번째 비공개 백엔드로 배포했으며, 게이트웨이 도구 이름은 `ams.search_designated_entities`, 필요 역할은 `mcp-ams`입니다. 공유 public client `394048911884420192`와 저장된 callback은 변경하지 않았습니다. AMS 및 게이트웨이 ArgoCD 앱은 `Synced/Healthy` 상태이며, 내부 서비스는 게이트웨이에서만 접근하도록 격리했습니다. 배포 상태와 네트워크 격리 확인은 공개 OAuth/MCP 및 실제 병무청 조회 성공을 뜻하지 않습니다.
 
-공개 컨테이너 이미지는 `ghcr.io/antegral/ams-mcp:sha-432f6c1@sha256:bf052f78092833e113a837f4dd2dbf9baaede4bc57a252a963051ac22901a318`입니다. [게시 실행 기록](https://github.com/antegral/agent-for-agent/actions/runs/37643887781)은 소스 `432f6c17a2cb92f0344c85f8eaae6bf39dae34bb`를 고정하여 linux/amd64 및 linux/arm64 이미지를 빌드했습니다. 레지스트리의 OCI 인덱스와 두 아키텍처의 소스 라벨을 익명으로 확인했으며, 이미지 pull 자격 증명은 필요하지 않습니다. 이 게시에 사용한 임시 워크플로우는 게시 후 제거합니다. 기존 품질 CI는 변경하지 않습니다.
+공개 컨테이너 이미지는 `ghcr.io/antegral/ams-mcp:sha-432f6c1@sha256:bf052f78092833e113a837f4dd2dbf9baaede4bc57a252a963051ac22901a318`입니다. [게시 실행 기록](https://github.com/antegral/agent-for-agent/actions/runs/37643887781)은 소스 `432f6c17a2cb92f0344c85f8eaae6bf39dae34bb`를 고정하여 linux/amd64 및 linux/arm64 이미지를 빌드했습니다. 레지스트리의 OCI 인덱스와 두 아키텍처의 소스 라벨을 익명으로 확인했으며, 이미지 pull 자격 증명은 필요하지 않습니다. 이 게시에 사용한 임시 워크플로우와 브랜치는 게시 후 제거했습니다. 기존 품질 CI는 변경하지 않았습니다.
+
+최종 공개 OAuth/MCP 시나리오는 한 번 실행했습니다. 공유 등록 조회는 HTTP 200으로 기존 설정과 일치했지만, `https://auth.antegral.net/.well-known/openid-configuration`의 공개 OIDC discovery 요청이 HTTP 403을 반환하여 중단했습니다. 이 요청에는 인증 헤더, PAT, 쿠키 또는 내부 Host 재정의를 사용하지 않았습니다. 응답 헤더와 본문이 보존되지 않아 403의 원인은 확인하지 못했습니다. 토큰 발급, 게이트웨이 MCP 호출 및 실제 AMS 병무청 조회에 도달하지 않았으므로 네이티브 조회 동작은 검증하지 못했습니다. 시나리오는 재실행하지 않았습니다.
 
 ## 개발 모드
 
