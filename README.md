@@ -139,6 +139,8 @@ Node.js 24 기반 컨테이너는 UID/GID `10001:10001`로 실행합니다. 애�
 
 게이트웨이 통합 계약은 `https://antegral.net/mcp`의 `ams.search_designated_entities` 및 `mcp-ams` 역할입니다. 내부 서비스는 게이트웨이에서만 접근하도록 배포 계층에서 격리해야 합니다. HTTP 구현과 이미지 빌드만으로 공개 OAuth/MCP 동작이 검증된 것은 아니며, 배포 후 최종 단일 시나리오 확인 전까지 런타임 검증은 대기 상태입니다.
 
+공개 컨테이너 이미지는 `ghcr.io/antegral/ams-mcp:sha-432f6c1@sha256:bf052f78092833e113a837f4dd2dbf9baaede4bc57a252a963051ac22901a318`입니다. [게시 실행 기록](https://github.com/antegral/agent-for-agent/actions/runs/37643887781)은 소스 `432f6c17a2cb92f0344c85f8eaae6bf39dae34bb`를 고정하여 linux/amd64 및 linux/arm64 이미지를 빌드했습니다. 레지스트리의 OCI 인덱스와 두 아키텍처의 소스 라벨을 익명으로 확인했으며, 이미지 pull 자격 증명은 필요하지 않습니다. 이 게시에 사용한 임시 워크플로우는 게시 후 제거합니다. 기존 품질 CI는 변경하지 않습니다.
+
 ## 개발 모드
 
 ```bash
