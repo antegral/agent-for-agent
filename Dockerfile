@@ -5,7 +5,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY tsconfig.json ./
 COPY src ./src
-RUN pnpm build && pnpm prune --prod --ignore-scripts
+RUN pnpm build && npm_config_ignore_scripts=true pnpm prune --prod
 
 FROM node:24-bookworm-slim AS runtime
 ENV NODE_ENV=production HOME=/tmp TMPDIR=/tmp
