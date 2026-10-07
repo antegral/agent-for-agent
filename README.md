@@ -16,50 +16,18 @@
 **파라미터:**
 
 #### 필수 파라미터
-- `eopjong_gbcd` (string): 복무 형태 선택 (필수)
-  - `'산업기능요원'` - 산업기능요원
-  - `'전문연구요원'` - 전문연구요원
-  - `'승선근무예비역'` - 승선근무예비역
+- `service_type` (string): `'산업기능요원'`, `'전문연구요원'`, `'승선근무예비역'` 중 하나
 
 #### 선택 파라미터
-- `al_eopjong_gbcd` (array): 업종 그룹 코드 리스트
-  - 예: `['정보처리', '게임SW', '전자']`
-  
-- `eopjong_gbcd_list` (array): 업종 선택 목록
-  - 업종 코드 배열
-  
-- `gegyumo_cd` (string): 기업 규모
-  - `''` - 전체 (기본값)
-  - `'대기업'` - 대기업
-  - `'중소기업'` - 중소기업
-  - `'중견기업'` - 중견기업
-  - `'농어민후계'` - 농어민 후계자
-  - `'기타'` - 기타
+- `company_size` (string): `''`, `'대기업'`, `'중소기업'`, `'중견기업'`, `'농어민후계'`, `'기타'`
+- `industry_sectors` (string | string[]): 업종 이름, 예: `'정보처리'` 또는 `['정보처리', '게임SW']`
+- `company_name` (string): 업체명 검색어
+- `city_province` (string): 시/도 이름, 예: `'서울특별시'`
+- `city_district` (string): 시/군/구 검색어
+- `is_hiring` (boolean): `true`이면 병무청 채용 공고 등록 업체로 제한
+- `military_service_status` (string | string[]): `'현역'`, `'보충역'` 또는 두 값의 배열
 
-- `eopjong_cd` (string | array): 업종 코드
-  - 단일 값 또는 배열로 전달 가능
-  - 예: `'정보처리'` 또는 `['정보처리', '전자']`
-
-- `eopche_nm` (string): 회사 이름
-  - 특정 회사명으로 검색
-  - 빈 값은 전체 조회
-
-- `sido_addr` (string): 시/도 선택
-  - 예: `'서울특별시'`, `'경기도'`, `'부산광역시'` 등
-
-- `sigungu_addr` (string): 시/군/구 주소
-  - sido_addr의 하위 지역
-  - 예: `'강남구'`, `'수원시'` 등
-  - 빈 값은 해당 시/도 전체 조회
-
-- `chaeyongym` (string): 병무청 채용 공고 등록 업체 여부
-  - `''` - 전체 (기본값)
-  - `'Y'` - 채용 공고 등록 업체만
-
-- `bjinwonym` (string | array): TO 유무
-  - `'H'` - 현역 TO 있음
-  - `'B'` - 보충역 TO 있음
-  - `['H', 'B']` - 현역/보충역 모두 조회
+위 이름은 MCP 도구 인자입니다. 병무청 form POST 필드로의 변환은 서버에서 처리합니다.
 
 **반환값:**
 - CSV 형식의 검색 결과 (헤더 포함)
@@ -71,23 +39,23 @@
 ```typescript
 // 산업기능요원 - 정보처리 업종 - 서울 강남구
 {
-  "eopjong_gbcd": "산업기능요원",
-  "eopjong_cd": "정보처리",
-  "sido_addr": "서울특별시",
-  "sigungu_addr": "강남구"
+  "service_type": "산업기능요원",
+  "industry_sectors": "정보처리",
+  "city_province": "서울특별시",
+  "city_district": "강남구"
 }
 
 // 전문연구요원 - 중소기업 - 채용공고 있음
 {
-  "eopjong_gbcd": "전문연구요원",
-  "gegyumo_cd": "중소기업",
-  "chaeyongym": "Y"
+  "service_type": "전문연구요원",
+  "company_size": "중소기업",
+  "is_hiring": true
 }
 
 // 특정 회사명 검색
 {
-  "eopjong_gbcd": "산업기능요원",
-  "eopche_nm": "네이버"
+  "service_type": "산업기능요원",
+  "company_name": "네이버"
 }
 ```
 
@@ -155,6 +123,22 @@ pnpm build
 pnpm start
 ```
 
+### 내부 HTTP 실행
+
+```bash
+pnpm serve
+```
+
+`node dist/http.js`는 `0.0.0.0:8936`에서 내부 전용 `POST /mcp`를 제공합니다. stdio와 HTTP는 같은 서버 팩토리와 도구 등록을 사용하며, 네이티브 도구는 `search_designated_entities` 하나입니다. resources와 prompts는 등록하지 않습니다.
+
+HTTP는 MCP `2025-11-25`만 허용하며 SDK의 stateless JSON 응답 모드를 사용합니다. 세션, 쿠키, SSE 및 bearer 인증은 제공하지 않습니다. 모든 요청의 Host는 정확히 `mcp.antegral.net`이어야 하며, Origin은 없거나 `https://mcp.antegral.net`이어야 합니다. 이 검사는 `GET /healthz`, `GET /readyz`에도 적용됩니다. 프로브는 동시 요청 한도와 별도로 처리하며 종료 중 readiness는 503을 반환합니다.
+
+MCP 요청은 한 번에 하나만 처리하며 JSON-RPC 배치를 거부합니다. 요청 본문 한도는 256 KiB, 헤더 및 본문 수신 제한은 각각 5초, 전체 교환 제한은 75초, 종료 제한은 35초입니다. 연결 종료와 요청 취소는 실제 병무청 fetch 및 응답 스트림에도 전달됩니다. 병무청 다운로드는 60초와 16 MiB로 제한하며 HTTP 오류를 성공 데이터로 바꾸거나 재시도하지 않습니다.
+
+Node.js 24 기반 컨테이너는 UID/GID `10001:10001`로 실행합니다. 애플리케이션 자격 증명, 브라우저, 데이터베이스 또는 영구 볼륨은 필요하지 않습니다. 루트 파일 시스템은 읽기 전용으로 둘 수 있으며 쓰기 가능한 임시 경로는 `/tmp`입니다. 병무청 공개 Excel 다운로드에 대한 HTTPS 통신은 필요합니다.
+
+게이트웨이 통합 계약은 `https://antegral.net/mcp`의 `ams.search_designated_entities` 및 `mcp-ams` 역할입니다. 내부 서비스는 게이트웨이에서만 접근하도록 배포 계층에서 격리해야 합니다. HTTP 구현과 이미지 빌드만으로 공개 OAuth/MCP 동작이 검증된 것은 아니며, 배포 후 최종 단일 시나리오 확인 전까지 런타임 검증은 대기 상태입니다.
+
 ## 개발 모드
 
 ```bash
@@ -194,6 +178,8 @@ Linux: `~/.config/Claude/claude_desktop_config.json`
 agent-for-agent/
 ├── src/
 │   ├── index.ts          # MCP 서버 메인 엔트리포인트
+│   ├── http.ts           # 내부 전용 HTTP 엔트리포인트
+│   ├── server.ts         # 공유 서버 팩토리 및 네이티브 도구 등록
 │   ├── mma-api.ts        # MMA API 클라이언트 함수
 │   ├── types.ts          # TypeScript 타입 정의
 │   └── __tests__/

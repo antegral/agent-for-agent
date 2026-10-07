@@ -17,6 +17,8 @@ import {
  */
 const MMA_API_BASE_URL = 'https://work.mma.go.kr/caisBYIS/search';
 const MMA_API_ENDPOINT = `${MMA_API_BASE_URL}/downloadBYJJEopCheExcel.do`;
+const maxDownloadBytes = 16 * 1024 * 1024;
+const upstreamLifetimeMs = 60_000;
 
 /**
  * 검색 쿼리를 URL-encoded form data로 변환
@@ -104,34 +106,65 @@ export function buildFormData(query: MilitaryWorkplaceSearchQuery): string {
  */
 export async function search_designated_entities(
   query: MilitaryWorkplaceSearchQuery,
+  requestSignal?: AbortSignal,
 ): Promise<string> {
   // Form data 생성
   const formData = buildFormData(query);
 
-  // HTTP 요청
-  const response = await fetch(MMA_API_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      accept:
-        'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-      'accept-language': 'ko,en-US;q=0.9,en;q=0.8',
-      'cache-control': 'no-cache',
-      'content-type': 'application/x-www-form-urlencoded',
-      Referer: 'https://work.mma.go.kr/caisBYIS/search/byjjecgeomsaek.do',
-    },
-    body: formData,
-  })
-    .then((response) => {
-      return response;
-    })
-    .catch((error) => {
-      console.error(`error: ${error}`);
-      throw new MMAApiError(`MMA API request failed: ${error.message}`, error.status);
+  const abort = new AbortController();
+  const signal = requestSignal
+    ? AbortSignal.any([requestSignal, abort.signal])
+    : abort.signal;
+  const deadline = setTimeout(() => abort.abort(new Error('MMA API request timed out')), upstreamLifetimeMs);
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  let workbook: XLSX.WorkBook;
+  try {
+    signal.throwIfAborted();
+    const response = await fetch(MMA_API_ENDPOINT, {
+      method: 'POST',
+      signal,
+      headers: {
+        accept:
+          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'accept-language': 'ko,en-US;q=0.9,en;q=0.8',
+        'cache-control': 'no-cache',
+        'content-type': 'application/x-www-form-urlencoded',
+        Referer: 'https://work.mma.go.kr/caisBYIS/search/byjjecgeomsaek.do',
+      },
+      body: formData,
     });
-
-  // 응답을 ArrayBuffer로 받아서 처리
-  const arrayBuffer = await response.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    if (!response.ok) {
+      throw new MMAApiError(`MMA API returned HTTP ${response.status}`, response.status);
+    }
+    if (!response.body) throw new MMAApiError('MMA API returned an empty response body');
+    if (Number(response.headers.get('content-length')) > maxDownloadBytes) {
+      throw new MMAApiError('MMA API download exceeds 16 MiB');
+    }
+    reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let length = 0;
+    while (true) {
+      signal.throwIfAborted();
+      const { done, value } = await reader.read();
+      if (done) break;
+      length += value.byteLength;
+      if (length > maxDownloadBytes) throw new MMAApiError('MMA API download exceeds 16 MiB');
+      chunks.push(value);
+    }
+    signal.throwIfAborted();
+    workbook = XLSX.read(Buffer.concat(chunks, length), { type: 'buffer', sheetRows: 31 });
+    signal.throwIfAborted();
+  } catch (error: unknown) {
+    if (error instanceof MMAApiError) throw error;
+    throw new MMAApiError(`MMA API request failed: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    clearTimeout(deadline);
+    abort.abort();
+    if (reader) {
+      await reader.cancel().catch(() => {});
+      reader.releaseLock();
+    }
+  }
 
   // 첫 번째 시트 가져오기
   const firstSheetName = workbook.SheetNames[0];
@@ -142,23 +175,12 @@ export async function search_designated_entities(
   const worksheet = workbook.Sheets[firstSheetName];
 
   // .xls -> .csv 형태로 변환
-  const strData = XLSX.utils.sheet_to_csv(worksheet, { FS: ',', RS: '\n' });
-
-  // \n으로 split하여 Array를 얻고, Header (row 0)를 제외한 나머지 부분을 slice
-  // 최대 30개의 row만 리턴 (헤더 제외)
-  const rows = strData.split('\n');
-  const dataRows = rows.slice(1, 31); // 헤더 제외, 최대 30개
-
-  // 빈 행 필터링
-  const filteredRows = dataRows.filter((row) => row.trim() !== '');
-
-  if (filteredRows.length === 0) {
+  const records = XLSX.utils.sheet_to_json<unknown[]>(worksheet, { header: 1, blankrows: false });
+  if (records.length < 2) {
     return 'No data found for the given search criteria.';
   }
-
-  // 헤더와 데이터를 함께 반환
-  const header = rows[0];
-  return `${header}\n${filteredRows.join('\n')}`;
+  // The workbook reader caps rows before CSV encoding, preserving multiline cells.
+  return XLSX.utils.sheet_to_csv(worksheet, { FS: ',', RS: '\n', blankrows: false });
 }
 
 /**
