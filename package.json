@@ -26,14 +26,13 @@
     "author": "",
     "license": "MIT",
     "dependencies": {
-        "@modelcontextprotocol/sdk": "1.24.3",
-        "xlsx": "^0.18.5",
+        "@modelcontextprotocol/sdk": "1.32.2",
+        "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
         "zod": "^3.23.8"
     },
     "devDependencies": {
         "@types/jest": "^29.5.12",
         "@types/node": "^20.11.19",
-        "@types/xlsx": "^0.0.36",
         "@typescript-eslint/eslint-plugin": "^7.0.1",
         "@typescript-eslint/parser": "^7.0.1",
         "eslint": "^8.56.0",

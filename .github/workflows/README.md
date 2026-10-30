@@ -37,6 +37,15 @@ git push origin v1.0.0
   - GitHub의 CodeQL을 사용한 보안 취약점 분석
   - JavaScript/TypeScript 코드 정적 분석
 
+### 4. Production image (`image.yml`)
+
+- Trusted `main` source/container changes and `workflow_dispatch` run source checks on Node.js **24.22.1**, using pnpm **8.15.0** and the frozen lockfile.
+- Type checks and the TypeScript build must pass before the separate publisher receives `packages: write`. The existing CI test workflow remains unchanged; its MMA query requires the external public service.
+- The publisher builds `linux/amd64` and `linux/arm64`, tags `ghcr.io/antegral/ams-mcp:sha-<first-seven-commit-characters>`, and records the build output's OCI index digest in the Actions notice and summary. Promote that immutable tag plus digest through GitOps separately.
+- Docker build/runtime bases pin Node.js **24.22.1** by multiarch digest. Debian packages are upgraded during the build; runtime installation requires `libbrotli1 >= 1.0.9-2+deb12u1`, separately from Node's embedded Brotli.
+- Application dependencies pin MCP SDK **1.32.2** and the official SheetJS **0.20.3** tarball (with lockfile integrity). SheetJS supplies its own types; the obsolete `@types/xlsx` stub is removed. Compatible Express/parser/router dependencies are resolved in `pnpm-lock.yaml`.
+- npm's bundled dependencies belong to the Node base, not this application's dependency graph; scan the published images separately before promotion.
+
 ## Dependabot (`../dependabot.yml`)
 
 의존성을 자동으로 최신 상태로 유지하기 위한 설정입니다.
