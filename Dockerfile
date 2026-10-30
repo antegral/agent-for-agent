@@ -17,6 +17,16 @@ RUN apt-get update && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 ams-mcp \
     && useradd --uid 10001 --gid 10001 --no-create-home --home-dir /tmp ams-mcp
+
+# npm's published dev metadata references unpublished packages; omit it before
+# resolving the two bundled dependencies still below the security baseline.
+RUN npm install --global --ignore-scripts npm@12.2.1 \
+    && npm pkg delete --prefix /usr/local/lib/node_modules/npm devDependencies \
+    && npm install --prefix /usr/local/lib/node_modules/npm \
+        --omit=dev --ignore-scripts --no-save --package-lock=false --workspaces=false \
+        ip-address@10.7.4 undici@6.29.1 \
+    && rm -rf /root/.npm /tmp/.npm
+
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist

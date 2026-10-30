@@ -44,7 +44,7 @@ git push origin v1.0.0
 - The publisher builds `linux/amd64` and `linux/arm64`, tags `ghcr.io/antegral/ams-mcp:sha-<first-seven-commit-characters>`, and records the build output's OCI index digest in the Actions notice and summary. Promote that immutable tag plus digest through GitOps separately.
 - Docker build/runtime bases pin Node.js **24.22.1** by multiarch digest. Debian packages are upgraded during the build; runtime installation requires `libbrotli1 >= 1.0.9-2+deb12u1`, separately from Node's embedded Brotli.
 - Application dependencies pin MCP SDK **1.32.2** and the official SheetJS **0.20.3** tarball (with lockfile integrity). SheetJS supplies its own types; the obsolete `@types/xlsx` stub is removed. Compatible Express/parser/router dependencies are resolved in `pnpm-lock.yaml`.
-- npm's bundled dependencies belong to the Node base, not this application's dependency graph; scan the published images separately before promotion.
+- Runtime npm is pinned to **12.2.1**, retaining both npm and npx. Its [published tarball](https://registry.npmjs.org/npm/-/npm-12.2.1.tgz) contains brace-expansion **5.0.12**, tar **7.5.22**, and postcss-selector-parser **7.1.6**, but still bundles ip-address **10.7.2** and undici **6.29.0**. The Dockerfile removes npm's development-only dependency metadata (which references unpublished packages), then uses npm to install compatible **ip-address 10.7.4** and **undici 6.29.1** into its own dependency tree and removes npm caches. These toolchain dependencies are separate from the application lockfile; scan the published images separately before promotion.
 
 ## Dependabot (`../dependabot.yml`)
 
